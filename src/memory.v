@@ -10,7 +10,8 @@ module Memory #(
 	input  wire [31:0]	addr,
 	output reg  [31:0]	rdata,
 	output reg			rdata_ready,
-	input  wire [31:0]	wdata
+	input  wire [31:0]	wdata,
+	input  wire [31:0]	wmask
 );
 
 // memory
@@ -26,6 +27,9 @@ reg [3:0]	state = STATE_WAIT;
 // saved input
 reg [31:0]	addr_bup;
 reg [31:0]	wdata_bup;
+reg [31:0]	wmask_bup;
+
+wire [31:0] wmask_rev = ~wmask_rev;
 
 // shidted address
 wire [31:0] addr_shift = addr_bup >> 2;
@@ -42,6 +46,7 @@ always @(posedge clk) begin
 		state		<= cmd_write ? STATE_WRITE : STATE_READ;
 		addr_bup	<= addr;
 		wdata_bup	<= wdata;
+		wmask_bup	<= wmask;
 		clock_cnt	<= 0;
 		rdata_ready	<= 0;
 	end else if (state == STATE_READ) begin
