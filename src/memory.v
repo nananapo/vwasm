@@ -8,8 +8,8 @@ module Memory #(
 	input  wire			cmd_ready,
 
 	input  wire [31:0]	addr,
-	output wire [31:0]	rdata,
-	output reg			rdata_ready
+	output reg  [31:0]	rdata,
+	output reg			rdata_ready,
 	input  wire [31:0]	wdata
 );
 
@@ -27,7 +27,7 @@ assign cmd_ready = state == STATE_WAIT;
 
 always @(posedge clk) begin
 	if (state == STATE_WAIT && cmd_start == 1) begin
-		state		<= cmd_write ? CMD_WRITE : CMD_READ;
+		state		<= cmd_write ? STATE_WRITE : STATE_READ;
 		addr_bup	<= addr;
 		wdata_bup	<= wdata;
 		rdata_ready	<= 0;
