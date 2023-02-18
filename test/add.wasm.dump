@@ -1,0 +1,10 @@
+
+add.wasm:	file format wasm 0x1
+
+Code Disassembly:
+
+000017 func[0]:
+ 000018: 41 0c                      | i32.const 12
+ 00001a: 41 22                      | i32.const 34
+ 00001c: 6a                         | i32.add
+ 00001d: 0b                         | end
