@@ -29,7 +29,9 @@ reg [31:0]	addr_bup;
 reg [31:0]	wdata_bup;
 reg [31:0]	wmask_bup;
 
-wire [31:0] wmask_rev = ~wmask_rev;
+wire		wmask_isfull	= wmask_bup == 32'hffffffff;
+wire [31:0] wmask_le		= {wmask_bup[7:0], wmask_bup[15:8], wmask_bup[23:16], wmask_bup[31:24]};
+wire [31:0] wmask_rev_le	= ~wmask_le;
 
 // shidted address
 wire [31:0] addr_shift = addr_bup >> 2;
@@ -87,14 +89,28 @@ always @(posedge clk) begin
 		end
 	end else if (state == STATE_WRITE) begin
 		if (addr_bup % 4 == 0) begin
-			data_mem[addr_shift] = {
-				wdata[7:0],
-				wdata[15:8],
-				wdata[23:16],
-				wdata[31:24]
-			};
-			rdata_ready <= 1;
-			state <= STATE_WAIT;
+			if (wmask_isfull) begin
+				data_mem[addr_shift] = {
+					wdata[7:0],
+					wdata[15:8],
+					wdata[23:16],
+					wdata[31:24]
+				};
+				rdata_ready <= 1;
+				state <= STATE_WAIT;
+			end else begin
+				if (clock_cnt == 0) begin
+					data_save <= data_mem[addr_shift];
+					clock_cnt <= clock_cnt + 1;
+				end else begin
+					data_mem[addr_shift] = {
+						({ wdata[7:0], wdata[15:8], wdata[23:16], wdata[31:24] } & wmask_le) |
+						(data_save & wmask_rev_le)
+					};
+					rdata_ready <= 1;
+					state <= STATE_WAIT;
+				end
+			end
 		end else begin
 			if (clock_cnt == 0) begin
 				data_save <= data_mem[addr_shift];
@@ -105,19 +121,25 @@ always @(posedge clk) begin
 			end else if (clock_cnt == 2) begin
 				data_mem[addr_shift] <= {
 					addr_bup == 1 ?
-						{data_save[31:24], wdata_bup[7:0], wdata_bup[15:8], wdata_bup[23:16]} : 
+						(data_save & {8'hff, wmask_rev_le[31:8]}) |
+						{8'h00, ({wdata_bup[7:0], wdata_bup[15:8], wdata_bup[23:16]} & wmask_le[31:8])} : 
 					addr_bup == 2 ?
-						{data_save[31:16], wdata_bup[7:0], wdata_bup[15:8]} : 
-					{data_save[31:8], wdata_bup[7:0]}
+						(data_save & {16'hffff, wmask_rev_le[31:16]}) |
+						{16'h0000, ({wdata_bup[7:0], wdata_bup[15:8]} & wmask_le[31:16])} :  
+					(data_save & {24'hffffff, wmask_rev_le[31:24]}) | 
+					{24'h000000, (wdata_bup[7:0] & wmask_le[31:24])}
 				};
 				clock_cnt <= clock_cnt + 1;
 			end else begin
 				data_mem[addr_shift + 1] <= {
 					addr_bup == 1 ?
-						{wdata_bup[31:24], data_save2[23:0]} : 
+						(data_save & {wmask_rev_le[7:0], 24'hffffff}) | 
+						{(wdata_bup[31:24] & wmask_le[7:0]), 24'h000000} :
 					addr_bup == 2 ?
-						{wdata_bup[31:24], wdata_bup[23:16], data_save2[15:0]} : 
-					{wdata_bup[31:24], wdata_bup[23:16], wdata_bup[15:8], data_save2[7:0]}
+						(data_save & {wmask_rev_le[15:0], 16'hffff}) | 
+						{({wdata_bup[23:16], wdata_bup[31:24]} & wmask_le[15:0]), 16'h0000} :
+					(data_save & {wmask_rev_le[24:0], 8'hff}) | 
+					{({wdata_bup[15:8], wdata_bup[23:16], wdata_bup[31:24]} & wmask_le[24:0]), 8'h00}
 				};
 				clock_cnt <= clock_cnt + 1;
 			end
