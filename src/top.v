@@ -25,4 +25,17 @@ Memory #(
 	.wmask(mem_inst_wmask)
 );
 
+Core core (
+	.clk(clk),
+
+	.mem_inst_cmd_start(mem_inst_cmd_start),
+	.mem_inst_cmd_write(mem_inst_cmd_write),
+	.mem_inst_cmd_ready(mem_inst_cmd_ready),
+	.mem_inst_addr(mem_inst_addr),
+	.mem_inst_rdata(mem_inst_rdata),
+	.mem_inst_rdata_ready(mem_inst_rdata_ready),
+	.mem_inst_wdata(mem_inst_wdata),
+	.mem_inst_wmask(mem_inst_wmask)
+);
+
 endmodule
