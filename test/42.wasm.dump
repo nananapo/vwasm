@@ -1,0 +1,8 @@
+
+42.wasm:	file format wasm 0x1
+
+Code Disassembly:
+
+000017 func[0]:
+ 000018: 41 2a                      | i32.const 42
+ 00001a: 0b                         | end
