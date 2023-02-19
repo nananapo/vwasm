@@ -15,7 +15,7 @@ module Memory #(
 );
 
 // memory
-reg [31:0] data_mem [MEMORY_SIZE-1:0];
+reg [31:0] mem [MEMORY_SIZE-1:0];
 
 // status
 localparam STATE_WAIT    = 0;
@@ -54,32 +54,32 @@ always @(posedge clk) begin
 	end else if (state == STATE_READ) begin
 		if (addr_bup % 4 == 0) begin
 			rdata <= {
-				data_mem[addr_shift][7:0],
-				data_mem[addr_shift][15:8],
-				data_mem[addr_shift][23:16],
-				data_mem[addr_shift][31:24]
+				mem[addr_shift][7:0],
+				mem[addr_shift][15:8],
+				mem[addr_shift][23:16],
+				mem[addr_shift][31:24]
 			};
 			rdata_ready <= 1;
 			state <= STATE_WAIT;
 		end else begin
 			if (clock_cnt == 0) begin
-				data_save <= data_mem[addr_shift];
+				data_save <= mem[addr_shift];
 				clock_cnt <= clock_cnt + 1;
 			end else begin
 				rdata <= {
 					addr_bup % 4 == 1 ? {
-							data_mem[addr_shift][31:24],
+							mem[addr_shift][31:24],
 							data_save[31:8]
 						} :
 					addr_bup % 4 == 2 ? {
-							data_mem[addr_shift][23:16],
-							data_mem[addr_shift][31:24],
+							mem[addr_shift][23:16],
+							mem[addr_shift][31:24],
 							data_save[31:16]
 						} :
 					{
-						data_mem[addr_shift][15:8],
-						data_mem[addr_shift][23:16],
-						data_mem[addr_shift][31:24],
+						mem[addr_shift][15:8],
+						mem[addr_shift][23:16],
+						mem[addr_shift][31:24],
 						data_save[31:24]
 					}
 				};
@@ -90,7 +90,7 @@ always @(posedge clk) begin
 	end else if (state == STATE_WRITE) begin
 		if (addr_bup % 4 == 0) begin
 			if (wmask_isfull) begin
-				data_mem[addr_shift] = {
+				mem[addr_shift] = {
 					wdata[7:0],
 					wdata[15:8],
 					wdata[23:16],
@@ -100,10 +100,10 @@ always @(posedge clk) begin
 				state <= STATE_WAIT;
 			end else begin
 				if (clock_cnt == 0) begin
-					data_save <= data_mem[addr_shift];
+					data_save <= mem[addr_shift];
 					clock_cnt <= clock_cnt + 1;
 				end else begin
-					data_mem[addr_shift] = {
+					mem[addr_shift] = {
 						({ wdata[7:0], wdata[15:8], wdata[23:16], wdata[31:24] } & wmask_le) |
 						(data_save & wmask_rev_le)
 					};
@@ -113,13 +113,13 @@ always @(posedge clk) begin
 			end
 		end else begin
 			if (clock_cnt == 0) begin
-				data_save <= data_mem[addr_shift];
+				data_save <= mem[addr_shift];
 				clock_cnt <= clock_cnt + 1;
 			end else if (clock_cnt == 1) begin
-				data_save2 <= data_mem[addr_shift + 1];
+				data_save2 <= mem[addr_shift + 1];
 				clock_cnt <= clock_cnt + 1;
 			end else if (clock_cnt == 2) begin
-				data_mem[addr_shift] <= {
+				mem[addr_shift] <= {
 					addr_bup == 1 ?
 						(data_save & {8'hff, wmask_rev_le[31:8]}) |
 						{8'h00, ({wdata_bup[7:0], wdata_bup[15:8], wdata_bup[23:16]} & wmask_le[31:8])} : 
@@ -131,7 +131,7 @@ always @(posedge clk) begin
 				};
 				clock_cnt <= clock_cnt + 1;
 			end else begin
-				data_mem[addr_shift + 1] <= {
+				mem[addr_shift + 1] <= {
 					addr_bup == 1 ?
 						(data_save & {wmask_rev_le[7:0], 24'hffffff}) | 
 						{(wdata_bup[31:24] & wmask_le[7:0]), 24'h000000} :
