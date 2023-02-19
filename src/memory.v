@@ -1,5 +1,6 @@
 module Memory #(
-	parameter MEMORY_SIZE = 2048
+	parameter MEMORY_SIZE = 2048,
+	parameter MEMORY_FILE = ""
 )(
 	input  wire			clk,
 
@@ -16,6 +17,12 @@ module Memory #(
 
 // memory
 reg [31:0] mem [MEMORY_SIZE-1:0];
+
+initial begin
+	if (MEMORY_FILE != "") begin
+		$readmemh(MEMORY_FILE, mem);
+	end
+end
 
 // status
 localparam STATE_WAIT    = 0;
