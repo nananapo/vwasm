@@ -11,6 +11,8 @@ reg			mem_inst_rdata_ready;
 reg [31:0]	mem_inst_wdata;
 reg [31:0]	mem_inst_wmask;
 
+reg			cpu_stop_flg= 1;
+
 Memory #(
 	.MEMORY_FILE("../test/42.wasm.mem")
 ) InstMemory (
@@ -27,6 +29,7 @@ Memory #(
 
 Core core (
 	.clk(clk),
+	.stop_flg(cpu_stop_flg),
 
 	.mem_inst_cmd_start(mem_inst_cmd_start),
 	.mem_inst_cmd_write(mem_inst_cmd_write),

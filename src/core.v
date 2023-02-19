@@ -1,6 +1,7 @@
 module Core (
 	input wire 			clk,
-	
+	input wire			stop_flg,
+
 	output reg			mem_inst_cmd_start,
 	output reg			mem_inst_cmd_write,
 	input  reg			mem_inst_cmd_ready,
